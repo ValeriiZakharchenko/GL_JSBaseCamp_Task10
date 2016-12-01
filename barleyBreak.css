@@ -1,0 +1,43 @@
+.body {
+	background-color:Lavender;
+}
+aside {
+	border-top: 1px solid #337ab7;
+	border-bottom: 1px solid #337ab7;
+}
+div.holderBoard {
+	border: 3px double #337ab7;
+	box-sizing: border-box;
+	width: 406px;
+	height: 406px;
+	background-color: chartreuse;
+	margin: auto;
+}
+.holderMain  > div, .sidebar {
+	margin-top: 20px;
+	text-align: center;
+}
+div.cell, div.cellZero {
+    display: flex;
+    justify-content: center; /* align horizontal */
+    align-items: center; /* align vertical */
+	box-sizing: border-box;
+	width: 100px;
+	height: 100px;
+	float: left;
+	-webkit-user-select: none;  /* Chrome all / Safari all */
+	-moz-user-select: none;     /* Firefox all */
+	-ms-user-select: none;      /* IE 10+ */
+	user-select: none;          /* Likely future */
+}
+div.cell {
+	border: 1px yellow dotted;
+	/*background-color: chartreuse;*/
+}
+div.cell:hover{
+	background-color: greenyellow;
+}
+div.cellZero, div.cellZero:hover {
+	border: 0;
+	background-color: ivory;
+}
