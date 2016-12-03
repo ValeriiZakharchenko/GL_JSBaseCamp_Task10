@@ -1,17 +1,14 @@
 'use strict'
 
-var set = {
-	timePass: 0,
-	movesDone: undefined,	// defined in build() and rebuild();
+/* Global parameters
+ */
+const set = {
+	timerGame: null,
+	movesDone: undefined,	// defines in build() and rebuild();
 	sizeBoard: 4,
 	colZero: 3,
 	lineZero: 3,
 	timerIntervalPointer: undefined
-};
-var toSave = {
-	order: [],
-	moves: 0,
-	time: 0
 };
 
 /* Create and return NODE.
@@ -56,24 +53,22 @@ var cellCreator = function cc(cellNumber) {
 /* Create table: node div which hold others div elements and return it.
  * Parameter 'sizeTable**2' set number inner div nodes.
  * Last cell zero.
-*/
-var holderBoard = function hb( sizeTable ) {
-	if ( sizeTable === undefined ) {		// if not set inner argument- property from global object set.sizeBoard
-		sizeTable = set.sizeBoard
+ */
+var holderBoard = function hb( sizeTable = set.sizeBoard, arr = [] ) {
+	// Create an array size sizeTable*sizeTable
+	if ( !arr.length ) {
+		for (let i = 1; i < sizeTable*sizeTable; i++) {
+			arr.push(i);
+		}
+		arr.sort ( function (){ return Math.random () - 0.5 } );	// Blend the array
 	}
-	
-	var arr = [];										// Create an array size sizeTable*sizeTable
-	for (let i = 1; i < sizeTable*sizeTable; i++) {
-		arr.push(i);
-	}
-	arr.sort ( function (){ return Math.random () - 0.5 } );	// Blend the array
 	
 	let boardNode = makeNode ('div', 'holderBoard');
 	let rowNode, cellNode, zerNode;
 	for ( let i = 0; i < sizeTable; i++ ) {
 		rowNode = makeNode ( 'div', 'lineBoard', {'name':`line${i}`} );
 		for (let j = 0; j < sizeTable; j++) {
-			if (i === sizeTable-1 && j === sizeTable-1){
+			if (i === set.lineZero && j === set.colZero) {
 				zerNode = makeNode ('div', ['cell', 'cellZero'], {'name': 'cell0'});
 				rowNode.appendChild ( zerNode )
 			}
@@ -91,73 +86,142 @@ var holderBoard = function hb( sizeTable ) {
  */
 var holderButtons = function hbt() {
 	let scoreNode = makeNode ('div', 'holderButtons');
-	let butNode = makeNode ('button', ['btn', 'btn-primary', 'btn-block'], {'name':'btnNewGame', 'type':'button'} );
+	let butNode = makeNode ('button', ['btn', 'btn-primary'], {'name':'btnNewGame', 'type':'button'} );
 	butNode.innerHTML = 'New game'
 	scoreNode.appendChild (butNode);
+	
+	let butNodeSave = makeNode ('button', ['btn', 'btn-primary'], {'name':'btnSaveGame', 'type':'button'} );
+	butNodeSave.innerHTML = 'Save game'
+	scoreNode.appendChild (butNodeSave);
+	
+	let butNodeLoad = makeNode ('button', ['btn', 'btn-primary'], {'name':'btnLoadGame', 'type':'button'} );
+	butNodeLoad.innerHTML = 'Load saved game'
+	scoreNode.appendChild (butNodeLoad);
+	
 	return scoreNode;
 }
 
 /* Create score holder
  */
-var holderScore = function hs() {
+var holderScore = function hs( momes = 0, time = '0 : 0 : 0' ) {
 	let scoreNode = makeNode ('div', ['holderScore', 'text-center']);
-	scoreNode.innerHTML =  `Steps: <span class='steps'>0</span> time pass: <span class='time'>0 : 0 : 0</span>`;
+	scoreNode.innerHTML =  `Steps: <span class='steps'>${momes}</span> time pass: <span class='time'>${time}</span>`;
 	return scoreNode;
 }
 
-var build = function b(){
+var build = function b ( orderCells = [], moves = 0, times = 0 ) {
 	let mainNode = document.querySelector ('.holderMain');
-	mainNode.appendChild ( holderButtons() );
-	mainNode.appendChild ( holderScore() );
-	mainNode.appendChild ( holderBoard() );
-	document.querySelector('.holderBoard').addEventListener('click', moveCell);
-	document.querySelector('[name=btnNewGame]').addEventListener('click', rebuild);
 	
-	set.movesDone = movesCounter();												// init the counter moves
-}
-
-var rebuild = function rb() {
-	set.timePass = 0;
-	set.colZero = 3;
-	set.lineZero = 3;
-	set.movesDone = movesCounter();
-	if (set.timerIntervalPointer !== undefined) {
-		clearInterval (set.timerIntervalPointer);
-		set.timerIntervalPointer = undefined;
+	mainNode.appendChild ( holderButtons() );
+	
+	if (times){
+		mainNode.appendChild ( holderScore( moves, set.timerGame.toString() ) );	
+	} else {
+		mainNode.appendChild ( holderScore() );
 	}
 	
+	if ( orderCells.length === 0 ){
+		mainNode.appendChild ( holderBoard() );
+	} else {
+		mainNode.appendChild ( holderBoard( Math.sqrt(orderCells.length), orderCells ) );
+	}
+	
+	document.querySelector('.holderBoard').addEventListener('click', function() { moveCell(); });
+	document.querySelector('[name=btnNewGame]').addEventListener('click',  function() { rebuild(); } );
+	document.querySelector('[name=btnSaveGame]').addEventListener('click', function() { saveGame(); } );
+	document.querySelector('[name=btnLoadGame]').addEventListener('click', function() { loadGame(); } );
+	
+	// Init the moves counter if game start
+	// If galme loaded - couter started in rebuild();
+	/*if ( moves === 0 ) {
+		set.movesDone = movesCounter( moves );
+	}*/
+	set.movesDone = movesCounter( moves );
+}
+
+/* Rebuild table 
+ * after click button 'NEW GAME' or 'LOAD GAME'
+ */
+
+var rebuild = function rb( orderCells = [], moves = 0, times = 0 ) {
+	// If Load game whith other config ( size of table was changed).
+	if ( orderCells.length > 0 ) {
+		set.sizeBoard = Math.sqrt ( orderCells.length );
+	}
+
+	// times !== 0 when Load Saved game. 
+	// Make timer whith passed time start rewriting time field with interval
+	if ( times ) {
+		set.timerGame = timerMaker (times);
+		if (set.timerIntervalPointer !== undefined) {
+			clearInterval (set.timerIntervalPointer);
+		}
+		set.timerIntervalPointer = setInterval( updateTimer, 1000 );
+	} 
+	// times === 0 when start New game.
+	// Clear counter and rewriting time field with interval
+	else {
+		set.timerGame = null;
+		if (set.timerIntervalPointer !== undefined) {
+			clearInterval (set.timerIntervalPointer);
+			set.timerIntervalPointer = undefined;
+		}
+	}
+
+	// Create moves counter.
+	// set.movesDone = movesCounter ( moves );
+	
+	// moves > 0 when load saved game
+	// Searching for index of zero cell.
+	if ( moves > 0 ) {
+		set.colZero = orderCells.indexOf('0') % set.sizeBoard;
+		set.lineZero = Math.floor ( orderCells.indexOf('0') / set.sizeBoard );
+	}
+	// moves === 0 when starts New game
+	// zero cell in right bottom corner
+	else {
+		set.colZero = 3;
+		set.lineZero = 3;
+	}
+	
+	// Clear games table and build again in tag '.holderMain'
 	let mainNode = document.querySelector ('.holderMain');
 	while ( mainNode.firstChild ) {						// null
 		mainNode.removeChild( mainNode.firstChild );
 	}
-	build();
+	build ( orderCells, moves, times );
 }
 
-function moveCell() {
-	let cellNode = event.target;			// Nodes variables initialization.
+/* Check necessity of move and move cell.
+ * Move cell if distance to ZeroCell === 0
+ */
+function moveCell () { 
+	// Nodes variables initialization.
+	let cellNode = event.target;
 	let lineBoard = cellNode.parentElement;
 	let table = lineBoard.parentElement;
 
-	let temp = cellNode;					// Count clicked column in table
+	// Count clicked column in table
+	let temp = cellNode;
 	let colClick = 0;
 	while ( ( temp = temp.previousSibling ) != null )
 		colClick++;
 
-	temp = lineBoard;						// Count clicked line in table
+	// Count clicked line in table
+	temp = lineBoard;
 	let lineClick = 0;
 	while ( ( temp = temp.previousSibling ) != null )
 		lineClick++;
 
-	let moveLeft = colClick - set.colZero;	// Distance from clicked cell to zeroCell
+	// Distance from clicked cell to zeroCell
+	let moveLeft = colClick - set.colZero;
 	let moveUp =   lineClick - set.lineZero;
 
-	if ( cellNode.className !== 'cell' ) {
-		return 0;
-	}
-	
+	// Count distance from clicked cell to zero cell
+	// Move horizontally
 	if ( Math.abs (moveLeft) === 1 && Math.abs (moveUp) === 0 ) {
-		if ( !set.timePass ) {
-			set.timePass = timerMaker ();
+		if ( !set.timerGame ) {
+			set.timerGame = timerMaker ();
 			set.timerIntervalPointer = setInterval( updateTimer, 1000 );
 		}
 		updateMoves();
@@ -169,9 +233,10 @@ function moveCell() {
 		set.colZero += moveLeft;
 	}
 	
+	// Move vertically
 	else if ( Math.abs (moveLeft) === 0 && Math.abs (moveUp) === 1 ) {
-		if ( !set.timePass ) {
-			set.timePass = timerMaker ();
+		if ( !set.timerGame ) {											// set.timerGame === null
+			set.timerGame = timerMaker ();
 			set.timerIntervalPointer = setInterval( updateTimer, 1000 );
 		}
 		updateMoves();
@@ -182,18 +247,25 @@ function moveCell() {
 
 		set.lineZero += moveUp;
 	}
+	
+	// Check victory condition.
 	checkWin();
 }
 
-/* Timer 
- * create and start timer object:
- * > var timer = timerMaker ()
- *
- * > timer.toString() 	//" 0 : 0 : 28 "
- * > timer.getMSeconds()	//47816
+/* Create and start timer object.
+ * Start after first click on cell or loading saved game.
+ * Parameter:
+ * 'timeBegin' - set value already passed time in milliseconds
+ * Methods:
+ * toString() - return string passed time in format: 'hh:mm:ss'
+ * getMSeconds() - return number of milliseconds after beginnig
+ * Ussage:
+ * > var timerGame = timerMaker ()
+ * > timerGame.toString() 		//" 0 : 0 : 28 "
+ * > timerGame.getMSeconds()	//47816
  */
-function timerMaker () {
-	var startTime = Date.now();
+function timerMaker ( timeBegin = 0 ) {
+	var startTime = Date.now() - timeBegin;
 	return {
 		toString: function (){
 			let timePassed = new Date ( Date.now() - startTime );
@@ -207,24 +279,35 @@ function timerMaker () {
 		}
 	}
 }
+
+/* Displaying time on page
+ * Evokes by setInterval if game started.
+ */
 function updateTimer (){
-	document.querySelector( 'div.holderScore span.time' ).innerHTML = set.timePass.toString();
+	document.querySelector( 'div.holderScore span.time' ).innerHTML = set.timerGame.toString();
 }
 
 /* Counter moves
+ * Parameter 'moves' - set begining value to count (after load game).
  */
-function movesCounter (){
-	var moves = 0;
+function movesCounter ( moves = 0 ){
 	return function (){ return ++moves; }
 }
 
+/* Displaying moves on page
+ * Evokes by click on cell
+ */
 function updateMoves () {
 	document.querySelector( 'div.holderScore span.steps' ).innerHTML = set.movesDone();
 }
 
+/* Check victory condition.
+ * If won then write parameters to aside panel.
+ */
 function checkWin () {
 	let tablet = document.querySelector('.holderBoard')
 	let cell;
+	// Check cell's order by his name's end. if the order not [1,2, ... 15, 0], then return -1
 	for (let i = 0; i < set.sizeBoard; i++ ) {
 		for (let j = 0; j < set.sizeBoard; j++) {
 			cell = tablet.children[i].children[j];
@@ -233,15 +316,21 @@ function checkWin () {
 			}
 		}
 	}
+	// Save game's time, stop timer
+	let timeStoped = set.timerGame.toString();
 	clearInterval ( set.timerIntervalPointer );
+	document.querySelector('.holderBoard').removeEventListener('click', moveCell);
+	
+	// Ask name end append to right section '.sidebar'.
 	let nameWiner;
 	if ( nameWiner = prompt ('Enter you name!') ) {
 		let side = document.querySelector ('.sidebar');
 		while ( side.firstChild ) {						// until not null
 			side.removeChild( side.firstChild );
 		}
-		side.innerHTML += `Best results:<br>${nameWiner} for time ${set.timePass.toString()}.`;
+		side.innerHTML += `Your result:<br>${nameWiner} for time ${timeStoped} .`;
+		//document.querySelector( '.sidebar' ).appendChild( document.createElement( 'p' ).appendChild( document.createTextNode (`Best results: ${nameWiner} for time ${timeStoped}.`) ) );
 	}
 }
-
-document.addEventListener("DOMContentLoaded", build);
+// START BIULDING PAGE
+document.addEventListener( "DOMContentLoaded", function() { build(); } );
