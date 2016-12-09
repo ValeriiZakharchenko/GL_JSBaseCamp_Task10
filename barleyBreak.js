@@ -12,13 +12,13 @@ const set = {
 };
 
 /* Create and return NODE.
- * Input parameter: nodeName, className, objSpec
- * nodeName - tag name
+ * Input parameter: nodeName, className, objSpec.
+ * nodeName - tag name.
  * className - string or array of strin specify class/es of node.
  * objSpec - object. key will be attribute name, value of key will be value of attribute.
  * If objSpec is undefined - no attribute will be created.
  */
-var makeNode = function mn(nodeName, className, objSpec) {
+const makeNode = function mn(nodeName, className, objSpec) {
 	let mainNode = document.createElement( nodeName );
 	
 	if (typeof className === 'string') {			// className - string
@@ -37,15 +37,12 @@ var makeNode = function mn(nodeName, className, objSpec) {
 	return mainNode;
 }
 
-/* Create and return cell for barley-dreak's board whith text
+/* Create and return cell for barley-dreak's board whith text.
  * Parameter 'cellNumber' - set value of inner text node and 
  * second part of class name: 'cell' + cellNumber.
  */
-var cellCreator = function cc(cellNumber) {
+const cellCreator = function cc(cellNumber) {
 	let cellNode = makeNode ('div', 'cell', {'name': `cell${cellNumber}`} );
-	/*document.createElement ('div');
-	cellNode.classList.add ('cell');
-	cellNode.setAttribute ( 'name', `cell${cellNumber}`)*/
 	cellNode.appendChild ( document.createTextNode ( cellNumber ) );
 	return cellNode;
 }
@@ -54,7 +51,7 @@ var cellCreator = function cc(cellNumber) {
  * Parameter 'sizeTable**2' set number inner div nodes.
  * Last cell zero.
  */
-var holderBoard = function hb( sizeTable = set.sizeBoard, arr = [] ) {
+const holderBoard = function hb( sizeTable = set.sizeBoard, arr = [] ) {
 	// Create an array size sizeTable*sizeTable
 	if ( !arr.length ) {
 		for (let i = 1; i < sizeTable*sizeTable; i++) {
@@ -82,9 +79,10 @@ var holderBoard = function hb( sizeTable = set.sizeBoard, arr = [] ) {
 	return boardNode;
 }
 
-/* Create button 'Start game'
+/* Create buttons holder.
+ * Buttons: 'New game', 'Save game', 'Load game'.
  */
-var holderButtons = function hbt() {
+const holderButtons = function hbt() {
 	let scoreNode = makeNode ('div', 'holderButtons');
 	let butNode = makeNode ('button', ['btn', 'btn-primary'], {'name':'btnNewGame', 'type':'button'} );
 	butNode.innerHTML = 'New game'
@@ -101,15 +99,17 @@ var holderButtons = function hbt() {
 	return scoreNode;
 }
 
-/* Create score holder
+/* Create score holder.
  */
-var holderScore = function hs( momes = 0, time = '0 : 0 : 0' ) {
+const holderScore = function hs( momes = 0, time = '0 : 0 : 0' ) {
 	let scoreNode = makeNode ('div', ['holderScore', 'text-center']);
 	scoreNode.innerHTML =  `Steps: <span class='steps'>${momes}</span> time pass: <span class='time'>${time}</span>`;
 	return scoreNode;
 }
 
-var build = function b ( orderCells = [], moves = 0, times = 0 ) {
+/* Build table.
+ */
+const build = function b ( orderCells = [], moves = 0, times = 0 ) {
 	let mainNode = document.querySelector ('.holderMain');
 	
 	mainNode.appendChild ( holderButtons() );
@@ -129,21 +129,16 @@ var build = function b ( orderCells = [], moves = 0, times = 0 ) {
 	document.querySelector('.holderBoard').addEventListener('click', function() { moveCell(); });
 	document.querySelector('[name=btnNewGame]').addEventListener('click',  function() { rebuild(); } );
 	document.querySelector('[name=btnSaveGame]').addEventListener('click', function() { saveGame(); } );
-	document.querySelector('[name=btnLoadGame]').addEventListener('click', function() { loadGame(); } );
+	document.querySelector('[name=btnLoadGame]').addEventListener('click', function() { loadGame(false); } );
 	
 	// Init the moves counter if game start
-	// If galme loaded - couter started in rebuild();
-	/*if ( moves === 0 ) {
-		set.movesDone = movesCounter( moves );
-	}*/
 	set.movesDone = movesCounter( moves );
 }
 
-/* Rebuild table 
- * after click button 'NEW GAME' or 'LOAD GAME'
+/* Rebuild table
+ * after click button 'NEW GAME' or 'LOAD GAME'.
  */
-
-var rebuild = function rb( orderCells = [], moves = 0, times = 0 ) {
+const rebuild = function rb( orderCells = [], moves = 0, times = 0 ) {
 	// If Load game whith other config ( size of table was changed).
 	if ( orderCells.length > 0 ) {
 		set.sizeBoard = Math.sqrt ( orderCells.length );
@@ -168,9 +163,6 @@ var rebuild = function rb( orderCells = [], moves = 0, times = 0 ) {
 		}
 	}
 
-	// Create moves counter.
-	// set.movesDone = movesCounter ( moves );
-	
 	// moves > 0 when load saved game
 	// Searching for index of zero cell.
 	if ( moves > 0 ) {
@@ -193,7 +185,7 @@ var rebuild = function rb( orderCells = [], moves = 0, times = 0 ) {
 }
 
 /* Check necessity of move and move cell.
- * Move cell if distance to ZeroCell === 0
+ * Move clicked cell if distance to ZeroCell === 1.
  */
 function moveCell () { 
 	// Nodes variables initialization.
@@ -201,24 +193,24 @@ function moveCell () {
 	let lineBoard = cellNode.parentElement;
 	let table = lineBoard.parentElement;
 
-	// Count clicked column in table
+	// Count clicked column in table.
 	let temp = cellNode;
 	let colClick = 0;
 	while ( ( temp = temp.previousSibling ) != null )
 		colClick++;
 
-	// Count clicked line in table
+	// Count clicked line in table.
 	temp = lineBoard;
 	let lineClick = 0;
 	while ( ( temp = temp.previousSibling ) != null )
 		lineClick++;
 
-	// Distance from clicked cell to zeroCell
+	// Distance from clicked cell to zeroCell.
 	let moveLeft = colClick - set.colZero;
 	let moveUp =   lineClick - set.lineZero;
 
-	// Count distance from clicked cell to zero cell
-	// Move horizontally
+	// Count distance from clicked cell to zero cell.
+	// Move horizontally.
 	if ( Math.abs (moveLeft) === 1 && Math.abs (moveUp) === 0 ) {
 		if ( !set.timerGame ) {
 			set.timerGame = timerMaker ();
@@ -233,7 +225,7 @@ function moveCell () {
 		set.colZero += moveLeft;
 	}
 	
-	// Move vertically
+	// Move vertically.
 	else if ( Math.abs (moveLeft) === 0 && Math.abs (moveUp) === 1 ) {
 		if ( !set.timerGame ) {											// set.timerGame === null
 			set.timerGame = timerMaker ();
@@ -260,12 +252,12 @@ function moveCell () {
  * toString() - return string passed time in format: 'hh:mm:ss'
  * getMSeconds() - return number of milliseconds after beginnig
  * Ussage:
- * > var timerGame = timerMaker ()
+ * > const timerGame = timerMaker ()
  * > timerGame.toString() 		//" 0 : 0 : 28 "
  * > timerGame.getMSeconds()	//47816
  */
 function timerMaker ( timeBegin = 0 ) {
-	var startTime = Date.now() - timeBegin;
+	const startTime = Date.now() - timeBegin;
 	return {
 		toString: function (){
 			let timePassed = new Date ( Date.now() - startTime );
@@ -280,22 +272,22 @@ function timerMaker ( timeBegin = 0 ) {
 	}
 }
 
-/* Displaying time on page
+/* Displaying time on page.
  * Evokes by setInterval if game started.
  */
 function updateTimer (){
 	document.querySelector( 'div.holderScore span.time' ).innerHTML = set.timerGame.toString();
 }
 
-/* Counter moves
+/* Counter moves.
  * Parameter 'moves' - set begining value to count (after load game).
  */
 function movesCounter ( moves = 0 ){
 	return function (){ return ++moves; }
 }
 
-/* Displaying moves on page
- * Evokes by click on cell
+/* Displaying moves on page.
+ * Evokes by click on cell.
  */
 function updateMoves () {
 	document.querySelector( 'div.holderScore span.steps' ).innerHTML = set.movesDone();
@@ -307,7 +299,7 @@ function updateMoves () {
 function checkWin () {
 	let tablet = document.querySelector('.holderBoard')
 	let cell;
-	// Check cell's order by his name's end. if the order not [1,2, ... 15, 0], then return -1
+	// Check cell's order by his name's end. if the order not [1,2, ... 15, 0], then return -1.
 	for (let i = 0; i < set.sizeBoard; i++ ) {
 		for (let j = 0; j < set.sizeBoard; j++) {
 			cell = tablet.children[i].children[j];
@@ -316,7 +308,7 @@ function checkWin () {
 			}
 		}
 	}
-	// Save game's time, stop timer
+	// Save game's time, stop timer.
 	let timeStoped = set.timerGame.toString();
 	clearInterval ( set.timerIntervalPointer );
 	document.querySelector('.holderBoard').removeEventListener('click', moveCell);
@@ -329,8 +321,14 @@ function checkWin () {
 			side.removeChild( side.firstChild );
 		}
 		side.innerHTML += `Your result:<br>${nameWiner} for time ${timeStoped} .`;
-		//document.querySelector( '.sidebar' ).appendChild( document.createElement( 'p' ).appendChild( document.createTextNode (`Best results: ${nameWiner} for time ${timeStoped}.`) ) );
 	}
 }
+
 // START BIULDING PAGE
-document.addEventListener( "DOMContentLoaded", function() { build(); } );
+/* loadGame(true) // true - mean trying to load autosaved record.
+ * loadGame(true) === -2  // if autosaved record is absent, table's DOM not built.
+ */
+document.addEventListener( 'DOMContentLoaded', function() { if ( !loadGame(true) ) build(); } );
+
+// Autosaving data before page will be closed.
+window.addEventListener( 'beforeunload', function() { saveGame(true); } );

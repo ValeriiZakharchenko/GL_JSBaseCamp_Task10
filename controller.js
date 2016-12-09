@@ -5,7 +5,7 @@
  * -1 if tablet not found!
  * Type of storage session/local sets in MODELs settings.
  */
-var saveGame = function sgCon () {
+const saveGame = function sgCon ( isAutoSave = false ) {
 	// Take links to DOM elements in table
 	let tablet = document.querySelector('.holderBoard');
 	let moves = document.querySelector( 'div.holderScore span.steps' ).innerHTML;
@@ -29,7 +29,7 @@ var saveGame = function sgCon () {
 	
 	// Save data to MODEL
 	// Alert according result of writing.
-	let res = saveData (arrIndexes, moves, timePass);
+	let res = saveData (arrIndexes, moves, timePass, isAutoSave);
 	if ( res === -1 ) {
 		alert ('localStorage not available!\nYou couldn\'t save the game');
 	} else if ( res === 0 ) {
@@ -37,27 +37,37 @@ var saveGame = function sgCon () {
 	}
 };
 
-/* Load data from storage
+/* Load data from storage.
  * Alert according returns of MODEL:
- * -1: storage not supports by this browser,
- * -2: game with such name absent.
- * obj: rebuilding VIEW
+ * -1: storage not supports by this browser;
+ * -2: game with such name absent;
+ * obj: rebuilding VIEW;
  * else: unexpected response of MODEL.
  */
-var loadGame = function lgCon () {
-	let res = loadLastData ();
+const loadGame = function lgCon ( isAutoSaved = false ) {
+	// Loading Data from Model.
+	let res = loadLastData ( isAutoSaved );
+	
+	// Handling returned value.
 	if ( res === -1 ) {
 		alert ('Storage is not supportes!');
 		return false;
 	}
 	else if ( res === -2 ) {
-		alert ('There are not saved games whith such name! Try other name!');
+		//alert ('There are not saved games whith such name! Try other name!');
 		return false;
 	}
 	else if ( typeof res === 'object' ) {
+		// Clear autosaved record after downloading data
+		if ( isAutoSaved ) {
+			removeSavedRecord (true);
+		}
+		// Rebuild board whith autosaved data.
 		rebuild (res.cells, res.steps, res.time);
+		return true;
 	}
 	else {
 		console.log ('Unexpected case!')
+		return false;
 	}
 }
